@@ -29,7 +29,7 @@
   "dependencies": {
     "asn1": "0.2.3",
     "assert-plus": "0.2.0",
-    "bunyan": "0.22.1",
+    "bunyan": "1.5.1",
     "nopt": "2.1.1",
     "pooling": "0.4.6"
   },

@@ -1,5 +1,9 @@
 ---
 title: Examples | ldapjs
+markdown2extras: wiki-tables
+logo-color: green
+logo-font-family: google:Aldrich, Verdana, sans-serif
+header-font-family: google:Aldrich, Verdana, sans-serif
 ---
 
 # ldapjs Examples
@@ -15,9 +19,7 @@ with ldapjs.
     ///--- Shared handlers
 
     function authorize(req, res, next) {
-      /* Any user may search after bind, only cn=root has full power */
-      var isSearch = (req instanceof ldap.SearchRequest);
-      if (!req.connection.ldap.bindDN.equals('cn=root') && !isSearch)
+      if (!req.connection.ldap.bindDN.equals('cn=root'))
         return next(new ldap.InsufficientAccessRightsError());
 
       return next();
@@ -56,10 +58,10 @@ with ldapjs.
       if (!db[dn])
         return next(new ldap.NoSuchObjectError(dn));
 
-      if (!db[dn].userpassword)
+      if (!dn[dn].userpassword)
         return next(new ldap.NoSuchAttributeError('userPassword'));
 
-      if (db[dn].userpassword.indexOf(req.credentials) === -1)
+      if (db[dn].userpassword !== req.credentials)
         return next(new ldap.InvalidCredentialsError());
 
       res.end();

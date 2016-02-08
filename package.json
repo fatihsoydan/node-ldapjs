@@ -8,14 +8,12 @@
     "Yunong Xiao <yunong@joyent.com>",
     "Denis Vuyka <denis.vuyka@gmail.com>",
     "Pedro Palazón <kusorbox@gmail.com>",
-    "Patrick Mooney <patrick.f.mooney@gmail.com>",
-    "Matt Simerson <matt@tnpi.net>"
+    "Patrick Mooney <patrick.f.mooney@gmail.com>"
   ],
   "name": "ldapjs",
   "homepage": "http://ldapjs.org",
   "description": "LDAP client and server APIs",
-  "version": "1.0.0",
-  "license": "MIT",
+  "version": "0.7.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/mcavage/node-ldapjs.git"
@@ -29,27 +27,20 @@
     "node": ">=0.8"
   },
   "dependencies": {
-    "asn1": "0.2.3",
-    "assert-plus": "0.2.0",
-    "bunyan": "1.5.1",
-    "dashdash": "1.10.1",
-    "backoff": "2.4.1",
-    "ldap-filter": "0.2.2",
-    "once": "1.3.2",
-    "vasync": "1.6.3",
-    "verror": "1.6.0"
+    "asn1": "0.2.1",
+    "assert-plus": "0.1.5",
+    "bunyan": "0.22.1",
+    "nopt": "2.1.1",
+    "pooling": "0.4.6"
   },
   "optionalDependencies": {
-    "dtrace-provider": "0.6.0"
+    "dtrace-provider": "0.2.8"
   },
   "devDependencies": {
-    "node-uuid": "1.4.3",
-    "faucet": "0.0.1",
-    "istanbul": "0.3.15",
-    "tape": "4.0.0"
+    "tap": "0.4.1",
+    "node-uuid": "1.4.0"
   },
   "scripts": {
-        "report": "./node_modules/.bin/istanbul report html && open ./coverage/lcov-report/index.html",
-        "test": "./node_modules/.bin/istanbul cover --print none test/test.js | ./node_modules/.bin/faucet"
+    "test": "./node_modules/.bin/tap ./test"
   }
 }

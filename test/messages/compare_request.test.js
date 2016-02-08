@@ -1,6 +1,6 @@
 // Copyright 2011 Mark Cavage, Inc.  All rights reserved.
 
-var test = require('tape').test;
+var test = require('tap').test;
 
 var asn1 = require('asn1');
 
@@ -36,7 +36,7 @@ test('new with args', function (t) {
     value: 'testy'
   });
   t.ok(req);
-  t.equal(req.dn.toString(), 'cn=foo, o=test');
+  t.equal(req.dn, 'cn=foo, o=test');
   t.equal(req.attribute, 'sn');
   t.equal(req.value, 'testy');
   t.end();

@@ -1,6 +1,6 @@
 // Copyright 2011 Mark Cavage, Inc.  All rights reserved.
 
-var test = require('tape').test;
+var test = require('tap').test;
 
 var asn1 = require('asn1');
 
@@ -55,7 +55,7 @@ test('parse', function (t) {
   t.ok(c);
   t.equal(c.type, '2.16.840.1.113730.3.4.2');
   t.ok(c.criticality);
-  t.equal(c.value.toString('utf8'), 'foo');
+  t.equal(c.value, 'foo');
   t.end();
 });
 

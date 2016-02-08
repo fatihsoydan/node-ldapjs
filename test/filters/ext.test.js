@@ -1,6 +1,6 @@
 // Copyright 2011 Mark Cavage, Inc.  All rights reserved.
 
-var test = require('tape').test;
+var test = require('tap').test;
 
 var asn1 = require('asn1');
 
@@ -106,5 +106,28 @@ test('parse RFC example 5', function (t) {
   t.equal(f.matchingRule, '2.4.6.8.10');
   t.equal(f.matchValue, 'Dino');
   t.ok(f.dnAttributes);
+  t.end();
+});
+
+
+test('parse caseIgnore', function (t) {
+  var f = filters.parseString('(cn:caseIgnoreMatch:=Dino)');
+  t.ok(f);
+  t.ok(f.matchType);
+  t.equal(f.matchingRule, 'caseIgnoreMatch');
+  t.equal(f.matchValue, 'Dino');
+  t.ok(f.matches({cn: 'dino'}));
+  t.end();
+});
+
+
+test('parse case substrings', function (t) {
+  var f = filters.parseString('(cn:caseIgnoreSubstringsMatch:=*i*o)');
+  t.ok(f);
+  t.ok(f.matchType);
+  t.equal(f.matchingRule, 'caseIgnoreSubstringsMatch');
+  t.ok(f.any);
+  t.ok(f['final']);
+  t.ok(f.matches({cn: 'dino'}));
   t.end();
 });

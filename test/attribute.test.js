@@ -1,6 +1,6 @@
 // Copyright 2011 Mark Cavage, Inc.  All rights reserved.
 
-var test = require('tape').test;
+var test = require('tap').test;
 
 var asn1 = require('asn1');
 
@@ -39,15 +39,6 @@ test('new with args', function (t) {
   t.equal(attr.vals[0], 'foo');
   t.equal(attr.vals[1], 'bar');
   t.equal(attr.vals[2], 'baz');
-  t.throws(function () {
-    attr = new Attribute('not an object');
-  });
-  t.throws(function () {
-    var typeThatIsNotAString = 1;
-    attr = new Attribute({
-      type: typeThatIsNotAString
-    });
-  });
   t.end();
 });
 
@@ -87,98 +78,5 @@ test('parse', function (t) {
   t.equal(attr.vals.length, 2);
   t.equal(attr.vals[0], 'foo');
   t.equal(attr.vals[1], 'bar');
-  t.end();
-});
-
-test('parse - without 0x31', function (t) {
-  var ber = new BerWriter;
-  ber.startSequence();
-  ber.writeString('sn');
-  ber.endSequence();
-
-  var attr = new Attribute;
-  t.ok(attr);
-  t.ok(attr.parse(new BerReader(ber.buffer)));
-
-  t.equal(attr.type, 'sn');
-  t.equal(attr.vals.length, 0);
-
-  t.end();
-});
-
-test('toString', function (t) {
-  var attr = new Attribute({
-    type: 'foobar',
-    vals: ['asdf']
-  });
-  var expected = attr.toString();
-  var actual = JSON.stringify(attr.json);
-  t.equal(actual, expected);
-  t.end();
-});
-
-test('isAttribute', function (t) {
-  var isA = Attribute.isAttribute;
-  t.notOk(isA(null));
-  t.notOk(isA('asdf'));
-  t.ok(isA(new Attribute({
-    type: 'foobar',
-    vals: ['asdf']
-  })));
-
-  t.ok(isA({
-    type: 'foo',
-    vals: ['item', new Buffer(5)],
-    toBer: function () { /* placeholder */ }
-  }));
-
-  // bad type in vals
-  t.notOk(isA({
-    type: 'foo',
-    vals: ['item', null],
-    toBer: function () { /* placeholder */ }
-  }));
-
-  t.end();
-});
-
-
-test('compare', function (t) {
-  var comp = Attribute.compare;
-  var a = new Attribute({
-    type: 'foo',
-    vals: ['bar']
-  });
-  var b = new Attribute({
-    type: 'foo',
-    vals: ['bar']
-  });
-  var notAnAttribute = 'this is not an attribute';
-
-  t.throws(function () {
-    comp(a, notAnAttribute);
-  });
-  t.throws(function () {
-    comp(notAnAttribute, b);
-  });
-
-  t.equal(comp(a, b), 0);
-
-  // Different types
-  a.type = 'boo';
-  t.equal(comp(a, b), -1);
-  t.equal(comp(b, a), 1);
-  a.type = 'foo';
-
-  // Different value counts
-  a.vals = ['bar', 'baz'];
-  t.equal(comp(a, b), 1);
-  t.equal(comp(b, a), -1);
-
-  // Different value contents (same count)
-  a.vals = ['baz'];
-  t.equal(comp(a, b), 1);
-  t.equal(comp(b, a), -1);
-
   t.end();
 });

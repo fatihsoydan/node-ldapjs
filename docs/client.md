@@ -1,12 +1,15 @@
 ---
 title: Client API | ldapjs
-markdown2extras: tables
+markdown2extras: wiki-tables
+logo-color: green
+logo-font-family: google:Aldrich, Verdana, sans-serif
+header-font-family: google:Aldrich, Verdana, sans-serif
 ---
 
 # ldapjs Client API
 
 This document covers the ldapjs client API and assumes that you are familiar
-with LDAP. If you're not, read the [guide](guide.html) first.
+with LDAP. If you're not, read the [guide](http://ldapjs.org/guide.html) first.
 
 # Create a client
 
@@ -22,23 +25,37 @@ that this will not use the LDAP TLS extended operation, but literally an SSL
 connection to port 636, as in LDAP v2). The full set of options to create a
 client is:
 
-|Attribute      |Description                                                |
-|---------------|-----------------------------------------------------------|
-|url            |A valid LDAP URL (proto/host/port only)                    |
-|socketPath     |Socket path if using AF\_UNIX sockets                      |
-|log            |Bunyan logger instance (Default: built-in instance)        |
-|timeout        |Milliseconds client should let operations live for before timing out (Default: Infinity)|
-|connectTimeout |Milliseconds client should wait before timing out on TCP connections (Default: OS default)|
-|tlsOptions     |Additional options passed to TLS connection layer when connecting via `ldaps://` (See: The TLS docs for node.js)|
-|idleTimeout    |Milliseconds after last activity before client emits idle event|
-|strictDN       |Force strict DN parsing for client methods (Default is true)|
+||url|| a valid LDAP url.||
+||socketPath|| If you're running an LDAP server over a Unix Domain Socket, use this.||
+||log|| You can optionally pass in a bunyan instance the client will use to acquire a logger.  The client logs all messages at the `trace` level.||
+||timeout||How long the client should let operations live for before timing out. Default is Infinity.||
+||connectTimeout||How long the client should wait before timing out on TCP connections. Default is up to the OS.||
+||maxConnections||Whether or not to enable connection pooling, and if so, how many to maintain.||
+||tlsOptions||Additional [options](http://nodejs.org/api/tls.html#tls_tls_connect_port_host_options_callback) passed to the TLS connection layer when connecting via `ldaps://`||
+
+If using connection pooling, you can additionally pass in:
+
+||bindDN||The DN all connections should be bound as.||
+||bindCredentials||The credentials to use with bindDN.||
+||checkInterval||How often to schedule health checks.||
+||maxIdleTime||How long a client can sit idle before initiating a health check (subject to the frequency set by checkInterval).||
 
 ## Connection management
 
 As LDAP is a stateful protocol (as opposed to HTTP), having connections torn
-down from underneath you is can be difficult to deal with.  Several mechanisms
-have been provided to mitigate this trouble.
+down from underneath you is difficult to deal with.  That said, the "raw"
+client, which is what you get when maxConnections is either unset or <= 1, does
+not do anything for you here; you can handle that however you want.
 
+More commonly, you probably want to use connection pooling, which performs
+health checks, and while you will see occasional errors from a client, those
+will be highly transient, as the pooling logic will purge them and create new
+ones for you.
+
+It is highly recommended you just provide bindCredentials initially, as all
+clients used will be authenticated, but you can call `bind` at any given time.
+This is expensive though, as the pool must first drain, be destroyed, and then
+recreated.  So try not to do that.
 
 ## Common patterns
 
@@ -50,17 +67,17 @@ Almost every operation has the callback form of `function(err, res)` where err
 will be an instance of an `LDAPError` (you can use `instanceof` to switch).
 You probably won't need to check the `res` parameter, but it's there if you do.
 
-
-
-
 # bind
-`bind(dn, password, controls, callback)`
+`bind(dn, password, controls,callback)`
 
 Performs a bind operation against the LDAP server.
 
 The bind API only allows LDAP 'simple' binds (equivalent to HTTP Basic
 Authentication) for now. Note that all client APIs can optionally take an array
 of `Control` objects. You probably don't need them though...
+
+If you have more than 1 connection in the connection pool, you will be called
+back after *all* of the connections are bound, not just the first one.
 
 Example:
 
@@ -170,7 +187,7 @@ server.  A couple points with this client API:
 
 * There is no ability to set "keep old dn."  It's always going to flag the old
 dn to be purged.
-* The client code will automatically figure out if the request is a "new
+* The client code will automagically figure out if the request is a "new
 superior" request ("new superior" means move to a different part of the tree,
 as opposed to just renaming the leaf).
 
@@ -191,20 +208,15 @@ defaults for you so that if you pass nothing in, it's pretty much equivalent
 to an HTTP GET operation (i.e., base search against the DN, filter set to
 always match).
 
-Like every other operation, `base` is a DN string.
+Like every other operation, `base` is a DN string.  Options has the following
+fields:
 
-Options can be a string representing a valid LDAP filter or an object
-containing the following fields:
-
-|Attribute  |Description                                        |
-|-----------|---------------------------------------------------|
-|scope      |One of `base`, `one`, or `sub`. Defaults to `base`.|
-|filter     |A string version of an LDAP filter (see below), or a programatically constructed `Filter` object. Defaults to `(objectclass=*)`.|
-|attributes |attributes to select and return (if these are set, the server will return *only* these attributes). Defaults to the empty set, which means all attributes. You can provide a string if you want a single attribute or an array of string for one or many.|
-|attrsOnly  |boolean on whether you want the server to only return the names of the attributes, and not their values.  Borderline useless.  Defaults to false.|
-|sizeLimit  |the maximum number of entries to return. Defaults to 0 (unlimited).|
-|timeLimit  |the maximum amount of time the server should take in responding, in seconds. Defaults to 10.  Lots of servers will ignore this.|
-|paging     |enable and/or configure automatic result paging|
+||scope||One of `base`, `one`, or `sub`. Defaults to `base`.||
+||filter||A string version of an LDAP filter (see below), or a programatically constructed `Filter` object. Defaults to `(objectclass=*)`.||
+||attributes||attributes to select and return (if these are set, the server will return *only* these attributes). Defaults to the empty set, which means all attributes.||
+||attrsOnly||boolean on whether you want the server to only return the names of the attributes, and not their values.  Borderline useless.  Defaults to false.||
+||sizeLimit||the maximum number of entries to return. Defaults to 0 (unlimited).||
+||timeLimit||the maximum amount of time the server should take in responding, in seconds. Defaults to 10.  Lots of servers will ignore this.||
 
 Responses from the `search` method are an `EventEmitter` where you will get a
 notification for each `searchEntry` that comes back from the server.  You will
@@ -220,8 +232,7 @@ Example:
 
     var opts = {
       filter: '(&(l=Seattle)(email=*@foo.com))',
-      scope: 'sub',
-      attributes: ['dn', 'sn', 'cn']
+      scope: 'sub'
     };
 
     client.search('o=example', opts, function(err, res) {
@@ -257,123 +268,28 @@ for an attribute `email` with a value of `foo@bar.com`.  The syntax would be:
     (email=foo@bar.com)
 
 ldapjs requires all filters to be surrounded by '()' blocks. Ok, that was easy.
-Let's now assume that you want to find all records where the email is actually
-just anything in the "@bar.com" domain and the location attribute is set to
-Seattle:
+Let's now assume you want to find all records where the email is actually just
+anything in the "@bar.com" domain, and the location attribute is set to Seattle:
 
     (&(email=*@bar.com)(l=Seattle))
 
-Now our filter is actually three LDAP filters.  We have an `and` filter (single
-amp `&`), an `equality` filter `(the l=Seattle)`, and a `substring` filter.
-Substrings are wildcard filters. They use `*` as the wildcard. You can put more
-than one wildcard for a given string. For example you could do `(email=*@*bar.com)`
-to match any email of @bar.com or its subdomains like "example@foo.bar.com".
-
-Now, let's say we also want to set our filter to include a
-specification that either the employeeType *not* be a manager nor a secretary:
+Now our filter is actually three LDAP filters.  We have an `and` filter,
+an `equality` filter (the l=Seattle), and a `substring` filter.  Substrings are
+wildcard filters.  Now, let's say we want to also set our filter to include a
+specification that either the employeeType *not* be a manager or a secretary:
 
     (&(email=*@bar.com)(l=Seattle)(!(|(employeeType=manager)(employeeType=secretary))))
 
-The `not` character is represented as a `!`, the `or` as a single pipe `|`.
 It gets a little bit complicated, but it's actually quite powerful, and lets you
 find almost anything you're looking for.
-
-## Paging
-Many LDAP server enforce size limits upon the returned result set (commonly
-1000).  In order to retrieve results beyond this limit, a `PagedResultControl`
-is passed between the client and server to iterate through the entire dataset.
-While callers could choose to do this manually via the `controls` parameter to
-`search()`, ldapjs has internal mechanisms to easily automate the process.  The
-most simple way to use the paging automation is to set the `paging` option to
-true when performing a search:
-
-    var opts = {
-      filter: '(objectclass=commonobject)',
-      scope: 'sub',
-      paging: true,
-      sizeLimit: 200
-    };
-    client.search('o=largedir', opts, function(err, res) {
-      assert.ifError(err);
-      res.on('searchEntry', function(entry) {
-        // do per-entry processing
-      });
-      res.on('page', function(result) {
-        console.log('page end');
-      });
-      res.on('error', function(resErr) {
-        assert.ifError(resErr);
-      });
-      res.on('end', function(result) {
-        console.log('done ');
-      });
-    });
-
-This will enable paging with a default page size of 199 (`sizeLimit` - 1) and
-will output all of the resulting objects via the `searchEntry` event.  At the
-end of each result during the operation, a `page` event will be emitted as
-well (which includes the intermediate `searchResult` object).
-
-For those wanting more precise control over the process, an object with several
-parameters can be provided for the `paged` option.  The `pageSize` parameter
-sets the size of result pages requested from the server.  If no value is
-specified, it will fall back to the default (100 or `sizeLimit` - 1, to obey
-the RFC).  The `pagePause` parameter allows back-pressure to be exerted on the
-paged search operation by pausing  at the end of each page.  When enabled, a
-callback function is passed as an additional parameter to `page` events.  The
-client will wait to request the next page until that callback is executed.
-
-Here is an example where both of those parameters are used:
-
-    var queue = new MyWorkQueue(someSlowWorkFunction);
-    var opts = {
-      filter: '(objectclass=commonobject)',
-      scope: 'sub',
-      paging: {
-        pageSize: 250,
-        pagePause: true
-      },
-    };
-    client.search('o=largerdir', opts, function(err, res) {
-      assert.ifError(err);
-      res.on('searchEntry', function(entry) {
-        // Submit incoming objects to queue
-        queue.push(entry);
-      });
-      res.on('page', function(result, cb) {
-        // Allow the queue to flush before fetching next page
-        queue.cbWhenFlushed(cb);
-      });
-      res.on('error', function(resErr) {
-        assert.ifError(resErr);
-      });
-      res.on('end', function(result) {
-        console.log('done');
-      });
-    });
-
-# starttls
-`starttls(options, controls, callback)`
-
-Attempt to secure existing LDAP connection via STARTTLS.
-
-Example:
-
-    var opts = {
-      ca: [fs.readFileSync('mycacert.pem')]
-    };
-
-    client.starttls(opts, function(err, res) {
-      assert.ifError(err);
-
-      // Client communication now TLS protected
-    });
-
 
 # unbind
 `unbind(callback)`
 
 Performs an unbind operation against the LDAP server.
+
+The unbind operation takes no parameters other than a callback, and will unbind
+(and disconnect) *all* of the connections in the pool.
 
 Example:
 

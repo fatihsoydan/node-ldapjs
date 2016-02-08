@@ -23,15 +23,23 @@ TAP		:= ./node_modules/.bin/tap
 #
 # Files
 #
-DOC_FILES	:= $(shell find docs -name '*.md' -printf '%f\n')
-RESTDOWN_FLAGS	:= -b docs/branding/
-JS_FILES	:= $(shell find lib test -name '*.js') $(shell find bin -name 'ldapjs-*')
+DOC_FILES	 =	client.md	\
+			dn.md		\
+			errors.md	\
+			examples.md	\
+			filters.md      \
+                        guide.md        \
+                        index.md        \
+                        persistent_search.md    \
+                        server.md
+
+JS_FILES	:= $(shell find lib test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
 
-CLEAN_FILES	+= node_modules coverage $(SHRINKWRAP) cscope.files
+CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
 include ./tools/mk/Makefile.defs
 
@@ -48,11 +56,8 @@ CLEAN_FILES += $(TAP) ./node_modules/tap
 
 .PHONY: test
 test: $(TAP)
-	$(NPM) test
-
-.PHONY: cover
-cover: test
-	$(NPM) run report
+	$(TAP) test/*.test.js
+	$(TAP) test/filters/*.test.js
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.targ

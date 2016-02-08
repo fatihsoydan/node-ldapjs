@@ -33,7 +33,6 @@
     "nopt": "2.1.1",
     "pooling": "0.4.6"
   },
-  },
   "devDependencies": {
     "tap": "0.4.1",
     "node-uuid": "1.4.0"
